@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numerology Insight</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-mesh">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container" id="app">
+        <!-- Top Screen -->
+        <section id="screen-top" class="screen active">
+            <div class="hero-content">
+                <h1 class="title">Numerology<br><span>Insight</span></h1>
+                <p class="subtitle">数字が紐解く、あなたの本質とテーマ</p>
+                <div class="glass-card start-card">
+                    <p>生年月日と直感的な質問から、<br>あなたの性格・傾向・人生テーマを深く分析します。</p>
+                    <button class="btn primary-btn" onclick="startApp()">診断を始める</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Input Screen -->
+        <section id="screen-input" class="screen hidden">
+            <h2 class="section-title">Profile</h2>
+            <p class="section-sub">あなたについて教えてください</p>
+            <div class="glass-card form-card">
+                <div class="input-group">
+                    <label for="birthdate">生年月日 <span class="tag required">必須</span></label>
+                    <input type="date" id="birthdate" required>
+                </div>
+                <div class="input-group">
+                    <label for="nickname">ニックネーム <span class="tag optional">任意</span></label>
+                    <input type="text" id="nickname" placeholder="あなたのお名前">
+                </div>
+                <div class="action-row">
+                    <button class="btn back-btn" onclick="showScreen('screen-top')">戻る</button>
+                    <button class="btn primary-btn" onclick="proceedToQuestions()">次へ</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Question Screen -->
+        <section id="screen-question" class="screen hidden">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="q-progress"></div>
+            </div>
+            <p class="q-counter">Question <span id="q-current">1</span> / 8</p>
+            <h2 class="section-title question-text" id="q-text">直感で動く？慎重に考える？</h2>
+            
+            <div class="glass-card options-card" id="q-options">
+                <!-- Options injected via JS -->
+            </div>
+        </section>
+
+        <!-- Loading Screen -->
+        <section id="screen-loading" class="screen hidden">
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>運命の数字を解析中...</p>
+            </div>
+        </section>
+
+        <!-- Result Screen -->
+        <section id="screen-result" class="screen hidden">
+            <div class="result-header">
+                <p class="user-name" id="res-nickname">ユーザーさんの診断結果</p>
+                <p class="type-label">TYPE</p>
+                <h1 class="type-title" id="res-type">戦略型リーダー</h1>
+                <p id="res-hidden-type" class="hidden-type-alert hidden">※裏タイプ：<span id="hidden-type-name"></span></p>
+            </div>
+
+            <div class="glass-card chart-card">
+                <canvas id="radarChart"></canvas>
+            </div>
+
+            <div class="glass-card info-card">
+                <h3>総合解説</h3>
+                <p id="res-desc"></p>
+            </div>
+
+            <div class="card-grid">
+                <div class="glass-card small-card">
+                    <h3>強み</h3>
+                    <ul id="res-strengths" class="feature-list"></ul>
+                </div>
+                <div class="glass-card small-card">
+                    <h3>弱み</h3>
+                    <ul id="res-weaknesses" class="feature-list"></ul>
+                </div>
+            </div>
+
+            <div class="glass-card info-card">
+                <h3>内面の傾向</h3>
+                <p id="res-inner"></p>
+            </div>
+
+            <div class="glass-card info-card highlight">
+                <h3>人生のテーマ</h3>
+                <p id="res-theme" class="theme-text"></p>
+                <div id="res-conflict" class="conflict-alert hidden"></div>
+            </div>
+
+            <div class="card-grid">
+                <div class="glass-card small-card">
+                    <h3>覚醒ポイント</h3>
+                    <p id="res-awakening"></p>
+                </div>
+                <div class="glass-card small-card">
+                    <h3>恋愛傾向</h3>
+                    <p id="res-romance"></p>
+                </div>
+            </div>
+
+            <button class="btn primary-btn restart-btn" onclick="location.reload()">もう一度診断する</button>
+        </section>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
