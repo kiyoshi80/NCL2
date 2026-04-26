@@ -50,6 +50,21 @@ function proceedToQuestions() {
     showScreen('screen-question');
 }
 
+function skipQuestions() {
+    const dateInput = document.getElementById('birthdate').value;
+    const nickname = document.getElementById('nickname').value || "あなた";
+    
+    if (!dateInput) {
+        alert("生年月日を入力してください。");
+        return;
+    }
+
+    userData = { date: dateInput, nickname: nickname };
+    userAnswers = {};
+    showScreen('screen-loading');
+    setTimeout(calculateResult, 2000);
+}
+
 function renderQuestion() {
     const q = questions[currentQuestion];
     document.getElementById('q-current').innerText = currentQuestion + 1;
@@ -106,6 +121,7 @@ function calculateResult() {
     const base = data.baseScores[lifePath] || data.baseScores[1];
     const innerBase = data.baseScores[inner] || data.baseScores[1];
 
+    let innateScores = {};
     let finalScores = {};
     const axes = ["action", "thinking", "inter", "extra", "emotion", "change", "value", "self"];
     
@@ -118,12 +134,15 @@ function calculateResult() {
             if (innerBase[axis] < 0) score -= data.innerModifiers[axis];
         }
 
+        innateScores[axis] = score;
+
         // Question modifier
+        let finalScore = score;
         if (userAnswers[axis]) {
-            score += userAnswers[axis];
+            finalScore += userAnswers[axis];
         }
 
-        finalScores[axis] = score;
+        finalScores[axis] = finalScore;
     });
 
     // Determine Type
@@ -191,10 +210,10 @@ function calculateResult() {
         }
     }
 
-    displayResult(typeKey, finalScores, hiddenType, theme, conflictMsg);
+    displayResult(typeKey, finalScores, innateScores, hiddenType, theme, conflictMsg);
 }
 
-function displayResult(typeKey, scores, hiddenType, themeNum, conflictMsg) {
+function displayResult(typeKey, finalScores, innateScores, hiddenType, themeNum, conflictMsg) {
     const typeInfo = data.types[typeKey];
     
     document.getElementById('res-nickname').innerText = `${userData.nickname} さんの診断結果`;
@@ -225,48 +244,87 @@ function displayResult(typeKey, scores, hiddenType, themeNum, conflictMsg) {
     }
 
     // Draw Radar Chart
-    drawRadar(scores);
+    drawRadar(finalScores, innateScores);
 
     showScreen('screen-result');
 }
 
-function drawRadar(scores) {
+function drawRadar(finalScores, innateScores) {
     const ctx = document.getElementById('radarChart').getContext('2d');
     
     const labels = [
-        scores.action >= 0 ? "即行動" : "慎重",
-        scores.thinking >= 0 ? "論理的" : "直感的",
-        scores.inter >= 0 ? "リーダー" : "サポート",
-        scores.extra >= 0 ? "外向的" : "内向的",
-        scores.emotion >= 0 ? "感情表現" : "感情内包",
-        scores.change >= 0 ? "変化適応" : "安定志向",
-        scores.value >= 0 ? "成果重視" : "意味重視",
-        scores.self >= 0 ? "自己認識(高)" : "自己認識(低)"
+        finalScores.action >= 0 ? "即行動" : "慎重",
+        finalScores.thinking >= 0 ? "論理的" : "直感的",
+        finalScores.inter >= 0 ? "リーダー" : "サポート",
+        finalScores.extra >= 0 ? "外向的" : "内向的",
+        finalScores.emotion >= 0 ? "感情表現" : "感情内包",
+        finalScores.change >= 0 ? "変化適応" : "安定志向",
+        finalScores.value >= 0 ? "成果重視" : "意味重視",
+        finalScores.self >= 0 ? "自己認識(高)" : "自己認識(低)"
     ];
 
-    const dataValues = [
-        Math.abs(scores.action), Math.abs(scores.thinking), Math.abs(scores.inter), 
-        Math.abs(scores.extra), Math.abs(scores.emotion), Math.abs(scores.change), 
-        Math.abs(scores.value), Math.abs(scores.self)
+    const finalData = [
+        Math.abs(finalScores.action), Math.abs(finalScores.thinking), Math.abs(finalScores.inter), 
+        Math.abs(finalScores.extra), Math.abs(finalScores.emotion), Math.abs(finalScores.change), 
+        Math.abs(finalScores.value), Math.abs(finalScores.self)
+    ];
+
+    const getAxisValue = (score, finalScore) => {
+        if (finalScore >= 0) {
+            return score >= 0 ? score : 0;
+        } else {
+            return score <= 0 ? Math.abs(score) : 0;
+        }
+    };
+
+    const innateData = [
+        getAxisValue(innateScores.action, finalScores.action),
+        getAxisValue(innateScores.thinking, finalScores.thinking),
+        getAxisValue(innateScores.inter, finalScores.inter),
+        getAxisValue(innateScores.extra, finalScores.extra),
+        getAxisValue(innateScores.emotion, finalScores.emotion),
+        getAxisValue(innateScores.change, finalScores.change),
+        getAxisValue(innateScores.value, finalScores.value),
+        getAxisValue(innateScores.self, finalScores.self)
     ];
 
     if(window.myRadar) window.myRadar.destroy();
+
+    const hasAnswers = Object.keys(userAnswers).length > 0;
+    
+    const datasets = [
+        {
+            label: '数秘術的素質 (生年月日)',
+            data: innateData,
+            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+            borderColor: '#ff6384',
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#ff6384',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#ff6384',
+            borderWidth: 2
+        }
+    ];
+
+    if (hasAnswers) {
+        datasets.push({
+            label: '現在の状態 (質問回答後)',
+            data: finalData,
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            borderColor: '#36a2eb',
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#36a2eb',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#36a2eb',
+            borderWidth: 2
+        });
+    }
 
     window.myRadar = new Chart(ctx, {
         type: 'radar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'パラメーター強度',
-                data: dataValues,
-                backgroundColor: 'rgba(199, 125, 255, 0.4)',
-                borderColor: '#c77dff',
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#c77dff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#c77dff',
-                borderWidth: 2
-            }]
+            datasets: datasets
         },
         options: {
             scales: {
@@ -285,7 +343,10 @@ function drawRadar(scores) {
                 }
             },
             plugins: {
-                legend: { display: false }
+                legend: { 
+                    display: true,
+                    labels: { color: '#f8f9fa' }
+                }
             }
         }
     });
